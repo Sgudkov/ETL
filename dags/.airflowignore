@@ -1,0 +1,8 @@
+config/*
+core/*
+env/*
+etl_local/*
+orm/*
+processors/*
+repositories/*
+utils/*
