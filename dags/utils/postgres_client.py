@@ -5,11 +5,13 @@
 """
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 from sqlalchemy import create_engine, schema
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import DeclarativeMeta
 
+from core.domain.repositories import IBaseRepository
 from core.infrastructure.repositories.base_sql_repository import SqlAlchemyRepository
 
 try:
@@ -62,7 +64,7 @@ class PostgresClient:
         return self._engine
 
     @staticmethod
-    def prepare_database(engine: Engine, orm_models: list[SqlAlchemyRepository]):
+    def prepare_database(engine: Engine, orm_models: list[type[DeclarativeMeta]]):
         """Подготавливает базу данных.
 
         Создает схему, если она не существует, и создает таблицы,
@@ -75,8 +77,8 @@ class PostgresClient:
 
         with engine.begin() as conn:
 
-            for models in orm_models:
-                table = models.orm_model.__table__
+            for model in orm_models:
+                table = model.__table__
                 if table.schema and table.schema != "public":
                     if not conn.dialect.has_schema(conn, table.schema):
                         conn.execute(schema.CreateSchema(table.schema))

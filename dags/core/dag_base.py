@@ -8,12 +8,13 @@
 """
 
 import logging
-from typing import Type, TypeVar
+from typing import Type, TypeVar, cast
 
 from airflow.exceptions import AirflowException
 from core.excel_processor_base import ExcelProcessorBase
+from core.infrastructure.repositories.repository_factory import RepositoryFactory
 from core.infrastructure.unit_of_work.sql_uow import SqlAlchemyUnitOfWork
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, DeclarativeMeta
 from utils.minio_client import MinIOClient
 from utils.postgres_client import PostgresClient
 
@@ -34,11 +35,11 @@ class DagBase:
 
     @staticmethod
     def init_validate(
-        bucket: str,
-        processor_cls: Type[T],
-        pg_conn_id: str = "",
-        s3_conn_id: str = "",
-        **kwargs,
+            bucket: str,
+            processor_cls: Type[T],
+            pg_conn_id: str = "",
+            s3_conn_id: str = "",
+            **kwargs,
     ) -> bool:
         """Инициализация и проверка соединений с PostgreSQL и MinIO.
 
@@ -83,8 +84,9 @@ class DagBase:
 
             engine = pg_client.engine
             # Создание таблицы, если отсутствует
+            orm_models = cast(list[type[DeclarativeMeta]], list(processor_cls.repository_classes.keys()))
             PostgresClient.prepare_database(
-                engine, processor_cls.repository_classes.values()
+                engine, orm_models
             )
         except Exception as e:
             logger.error(f"Ошибка при проверке соединений и инициализации данных {e}")
@@ -134,12 +136,12 @@ class DagBase:
 
     @staticmethod
     def process_file(
-        file_metadata: dict,
-        bucket: str,
-        processor_cls: Type[T],
-        pg_conn_id: str = "",
-        s3_conn_id: str = "",
-        **kwargs,
+            file_metadata: dict,
+            bucket: str,
+            processor_cls: Type[T],
+            pg_conn_id: str = "",
+            s3_conn_id: str = "",
+            **kwargs,
     ) -> dict:
         """Обработка отдельного файла, включая ETL-процесс.
 
@@ -175,7 +177,8 @@ class DagBase:
         file_name = file_metadata.get("file_name")
 
         with session_factory() as session:
-            uow = SqlAlchemyUnitOfWork(session, processor_cls.repository_classes)
+            repo_factory = RepositoryFactory(processor_cls.repository_classes)
+            uow = SqlAlchemyUnitOfWork(session, repo_factory)
             processor = processor_cls(uow)  # Использование переданного класса
 
             # Скачиваем файл
@@ -207,11 +210,11 @@ class DagBase:
 
     @staticmethod
     def move_file_to(
-        processed_data: dict,
-        success_path: str,
-        error_path: str,
-        s3_conn_id: str = "",
-        **kwargs,
+            processed_data: dict,
+            success_path: str,
+            error_path: str,
+            s3_conn_id: str = "",
+            **kwargs,
     ):
         """Перемещение обработанного файла в соответствующую директорию.
 

@@ -52,7 +52,7 @@ class ExcelProcessorBase(IExcelProcessorBase):
         """
         raise NotImplementedError
 
-    def save(self, data: dict[str, list[dict]] = None) -> int:
+    def save(self, data: dict[type, list[dict]] = None) -> int:
         """Сохраняет обработанные данные в базу данных.
 
         Args:
@@ -67,8 +67,8 @@ class ExcelProcessorBase(IExcelProcessorBase):
 
         with self.uow.transaction():
             count = 0
-            for repo_name, rows in data.items():
-                repo = self.uow.repos[repo_name]
+            for model, rows in data.items():
+                repo = self.uow.get_repo(model)
                 count += repo.bulk_insert(rows)
 
         return count

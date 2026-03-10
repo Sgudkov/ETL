@@ -7,7 +7,7 @@ ORM модели, обработки данных, загрузки и сохр�
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Type, TypeVar
+from typing import Any, Dict, Generic, List, TypeVar
 
 from core.domain.repositories import IBaseRepository
 from core.domain.unit_of_work import IUnitOfWork
@@ -44,7 +44,7 @@ class IExcelProcessorBase(ABC, Generic[R]):
                 uow (IUnitOfWork): Экземпляр Unit of Work.
     """
 
-    repository_classes: dict[str, Type[IBaseRepository]]
+    repository_classes: dict[type, type[IBaseRepository]]
     dag_id: str
     bucket_name: str
     schedule: str
@@ -90,11 +90,11 @@ class IExcelProcessorBase(ABC, Generic[R]):
         pass
 
     @abstractmethod
-    def save(self, data: dict[str, list[dict]] = None) -> int:
+    def save(self, data: dict[type, list[dict]] = None) -> int:
         """Сохраняет обработанные данные.
 
         Args:
-            data (dict[str, list[dict]], optional): Словарь,
+            data (dict[type, list[dict]], optional): Словарь,
                 представляющий собой обработанные данные по каждому репозиторию. Если None,
                 метод может выполнять какое-то действие по умолчанию.
         """

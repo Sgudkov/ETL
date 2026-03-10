@@ -7,9 +7,12 @@
 from contextlib import contextmanager
 from typing import Type, TypeVar
 
+from core.domain.repositories import IBaseRepository
 from core.domain.unit_of_work import IUnitOfWork
 from core.infrastructure.repositories.base_sql_repository import SqlAlchemyRepository
 from sqlalchemy.orm import Session
+
+from core.infrastructure.repositories.repository_factory import RepositoryFactory
 
 T = TypeVar("T", bound=SqlAlchemyRepository)
 
@@ -21,17 +24,17 @@ class SqlAlchemyUnitOfWork(IUnitOfWork):
     доступа к репозиториям, основанным на SQLAlchemy.
     """
 
-    def __init__(self, session: Session, repos: dict[str, Type[T]]):
+    def __init__(self, session: Session, repo_factory: RepositoryFactory):
         """Инициализирует экземпляр SqlAlchemyUnitOfWork.
 
         Args:
             session: Экземпляр SQLAlchemy Session для управления транзакциями и репозиториями.
         """
         self.session = session
-        self.repos = {
-            name: repo(session)
-            for name, repo in repos.items()
-        }
+        self.repo_factory = repo_factory
+
+    def get_repo(self, model: type) -> SqlAlchemyRepository:
+        return self.repo_factory.create(model, self.session)
 
     def commit(self):
         """Фиксирует изменения в базе данных."""
