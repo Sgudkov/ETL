@@ -7,7 +7,7 @@ Generic[T]: Generic параметр, представляющий тип ORM-м
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -20,8 +20,6 @@ class IBaseRepository(ABC, Generic[T]):
 
     Generic[T]: Generic параметр, представляющий тип ORM-модели или данных, с которыми работает репозиторий.
     """
-
-    orm_model: Optional[type[T]]
 
     @abstractmethod
     def bulk_insert(self, data: list[dict[str, Any]]) -> int:

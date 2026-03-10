@@ -6,11 +6,11 @@
 """
 
 import logging
-from typing import Any, Dict, List
 
-from core.domain.excel import IExcelProcessorBase
-from core.infrastructure.unit_of_work.sql_uow import SqlAlchemyUnitOfWork
-from utils.minio_client import MinIOClient
+from core.domain.base_processor import IExcelProcessorBase
+from core.domain.base_repositories import IBaseRepository
+from core.infrastructure.postgres.postgres_uow import SqlAlchemyUnitOfWork
+from core.infrastructure.minio.minio_client import MinIOClient
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,9 @@ class ExcelProcessorBase(IExcelProcessorBase):
     использования с SQLAlchemy Unit of Work паттерном и MinIO для хранения файлов.
     """
 
+    repository_classes: dict[type, type[IBaseRepository]]
+    dag_id: str
+    bucket_name: str
     schedule: str = "@daily"
 
     def __init__(self, uow: SqlAlchemyUnitOfWork):
@@ -31,10 +34,9 @@ class ExcelProcessorBase(IExcelProcessorBase):
         Args:
             uow: Экземпляр SqlAlchemyUnitOfWork для управления транзакциями и репозиторием.
         """
-        super().__init__(uow)
         self.uow = uow
 
-    def process(self, file_name: str, data: bytes) -> List[Dict[str, Any]]:
+    def process(self, file_name: str, data: bytes) -> dict[type, list[dict]]:
         """Обрабатывает данные из Excel файла.
 
         Этот метод должен быть реализован в подклассах для определения
@@ -45,7 +47,7 @@ class ExcelProcessorBase(IExcelProcessorBase):
             data: Бинарные данные файла.
 
         Returns:
-            Список словарей, представляющих обработанные данные.
+            Словарь, представляющих обработанные данные.
 
         Raises:
             NotImplementedError: Если метод не реализован в подклассе.
@@ -73,7 +75,7 @@ class ExcelProcessorBase(IExcelProcessorBase):
 
         return count
 
-    def run(self, file: tuple[str, bytes]) -> List[Dict[str, Any]]:
+    def run(self, file: tuple[str, bytes]):
         """Запускает процесс обработки Excel файла.
 
         Этот метод принимает кортеж, содержащий имя файла и его бинарные данные,
@@ -82,11 +84,10 @@ class ExcelProcessorBase(IExcelProcessorBase):
         Args:
             file: Кортеж, содержащий имя файла (str) и бинарные данные файла (bytes).
 
-        Returns:
-            Список словарей, представляющих обработанные данные.
         """
         filename, data = file
-        return self.process(file_name=filename, data=data)
+        data = self.process(file_name=filename, data=data)
+        self.save(data)
 
     @staticmethod
     def load(bucket: str, minio: MinIOClient) -> list[dict]:

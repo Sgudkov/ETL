@@ -1,8 +1,8 @@
 """Модуль репозиториев для работы с excel данными в базе данных."""
 
-from core.infrastructure.repositories.base_sql_repository import \
+from core.infrastructure.postgres.postgres_repository import \
     SqlAlchemyRepository
-from orm.table2_orm import ExcelTable2ORM
+from processors.processor_2.orm.table2_orm import ExcelTable2ORM
 
 
 class Excel2Repository(SqlAlchemyRepository):

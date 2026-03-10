@@ -5,37 +5,37 @@
 ## Ключевые компоненты
 
 ### DAGs
--   **Регистрация DAGs**: ``@dag.py``
--   **Базовый DAG**: ``@dag_base.py``
+-   **Регистрация DAGs**: ``dags/dag.py``
+-   **Базовый DAG**: ``dags/core/airflow/dag_base.py``
 
 ### Абстрактный механизм
 Реализован гибкий механизм с использованием абстрактных классов, который позволяет легко расширять функционал.
--   **Абстракции**: ``@excel.py``, ``@repositories.py``, ``@unit_of_work.py``
--   **Реализации**: ``@base_sql_repository.py``, ``@sql_uow.py``, ``@excel_processor_base.py``
+-   **Абстракции**: ``dags/core/domain/base_processor.py``, ``dags/core/domain/base_repositories.py``, ``dags/core/domain/unit_of_work.py``
+-   **Реализации**: ``dags/core/infrastructure/postgres/base_postgres_repository.py``, ``dags/core/infrastructure/postgres/postgres_uow.py`` 
 
 ### Примеры использования
--   **Пример обработки Excel**: ``@excel_processor1.py``
--   **Репозитории для примера**: ``@excel1_repositories.py``
+-   **Пример обработки Excel**: ``dags/processors/processor_1/processor.py``
+-   **Репозитории для примера**: ``dags/processors/processor_1/repositories/excel1_repositories.py``
 
 ### Локальный запуск без airflow
--   **База для локального запуска**: ``@local_base.py``
--   **Пример локального запуска**: ``@local_run.py``
+-   **База для локального запуска**: ``dags/core/airflow/local_base.py``
+-   **Пример локального запуска**: ``dags/etl_local/local_run.py``
 
 ### Клиенты хранилищ
 Гибко настроена работа с внешними хранилищами данных.
--   **Клиент S3 (MinIO)**: ``@minio_client.py``
--   **Клиент PostgreSQL**: ``@postgres_client.py``
+-   **Клиент S3 (MinIO)**: ``dags/core/infrastructure/minio/minio_client.py``
+-   **Клиент PostgreSQL**: ``dags/core/infrastructure/postgres/postgres_client.py``
 
 ## Структура проекта
 
 *   ``dag.py``: Точка входа для регистрации всех DAG-ов.
 *   ``dag_base.py``: Базовая реализация DAG, от которой наследуются другие DAG-и.
-*   ``excel.py``, ``repositories.py``, ``unit_of_work.py``: Абстрактные классы, определяющие интерфейс для обработки данных, репозиториев и unit of work.
-*   ``base_sql_repository.py``, ``sql_uow.py``, ``excel_processor_base.py``: Конкретные реализации абстрактных классов для работы с SQL-базой данных и обработкой Excel-файлов.
-*   ``excel_processor1.py``, ``excel1_repositories.py``: Пример использования реализованных абстракций для обработки конкретного Excel-файла.
-*   ``local_base.py``, ``local_run.py``: Скрипты для настройки и запуска ETL-процесса в локальной среде.
-*   ``minio_client.py``: Клиент для взаимодействия с S3-совместимым хранилищем (например, MinIO).
-*   ``postgres_client.py``: Клиент для взаимодействия с базой данных PostgreSQL.
+*   ``base_processor.py``, ``base_repositories.py``, ``unit_of_work.py``: Абстрактные классы, определяющие интерфейс для обработки данных, репозиториев и unit of work.
+*   ``base_postgres_repository.py``, ``postgres_uow.py``: Конкретные реализации абстрактных классов для работы с SQL-базой данных и обработкой Excel-файлов.
+*   ``dags/processors/processor_1/processor.py``, ``dags/processors/processor_1/repositories/excel1_repositories.py``: Пример использования реализованных абстракций для обработки конкретного Excel-файла.
+*   ``dags/core/airflow/local_base.py``, ``dags/etl_local/local_run.py``: Скрипты для настройки и запуска ETL-процесса в локальной среде.
+*   ``dags/core/infrastructure/minio/minio_client.py``: Клиент для взаимодействия с S3-совместимым хранилищем (например, MinIO).
+*   ``dags/core/infrastructure/postgres/postgres_client.py``: Клиент для взаимодействия с базой данных PostgreSQL.
 
 
 ## Локальный запуск

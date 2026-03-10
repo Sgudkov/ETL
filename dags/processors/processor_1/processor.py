@@ -8,17 +8,14 @@ from io import BytesIO
 
 import pandas as pd
 
-from core.excel_processor_base import ExcelProcessorBase
-from orm.table1_orm import ExcelTable1ORM
-from orm.table2_orm import ExcelTable2ORM
-from repositories.excel1_repositories import Excel1Repository
-from repositories.excel2_repositories import Excel2Repository
+from core.application.excel_processor_base import ExcelProcessorBase
+from processors.processor_1.orm.table1_orm import ExcelTable1ORM
+from processors.processor_1.repositories.excel1_repositories import Excel1Repository
 
 
 class ExcelProcessor1(ExcelProcessorBase):
     repository_classes = {
         ExcelTable1ORM: Excel1Repository,
-        ExcelTable2ORM: Excel2Repository,
     }
     dag_id = "ExcelProcessor1"
     bucket_name = "excelbucket"

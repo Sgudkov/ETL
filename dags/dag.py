@@ -1,26 +1,34 @@
+"""DAG для загрузки и обработки Excel файлов."""
+
 import logging
+from pathlib import Path
 from typing import Type, TypeVar
 
 import pendulum
 from airflow.decorators import task, task_group
 from airflow.models.dag import dag
 from config.settings import settings
-from core.dag_base import DagBase
-from core.excel_processor_base import ExcelProcessorBase
-from processors import * # необходимо для регистрации дагов
+from core.airflow.dag_base import DagBase
+from core.application.excel_processor_base import ExcelProcessorBase
+from core.utils.auto_import import import_all_submodules
 
 logger = logging.getLogger(__name__)
 
+# Автоматически загружаем ВСЕ processors
+import_all_submodules(
+    package_path=str(Path(__file__).parent / "processors"), package_name="processors"
+)
+
 
 def handle_file_failure(context):
-    """Callback обработчик перемещает файл в папку ошибки"""
-    logger.info(f'Перемещаем в ошибку, контекст {context}')
+    """Перемещение файла в папку ошибок при сбое обработки."""
+    logger.info(f"Перемещаем в ошибку, контекст {context}")
     processed_data = context["file_metadata"]
     DagBase.move_file_to(
         processed_data=processed_data,
         success_path=settings.SUCCESS_PATH,
         error_path=settings.ERROR_PATH,
-        s3_conn_id=settings.S3_CONN_ID
+        s3_conn_id=settings.S3_CONN_ID,
     )
 
 
@@ -28,6 +36,8 @@ T = TypeVar("T", bound=ExcelProcessorBase)
 
 
 def create_dag(processor_cls: Type[T]):
+    """Создаёт DAG для обработки Excel файлов с использованием указанного процессора."""
+
     @dag(
         dag_id=processor_cls.dag_id,
         schedule=processor_cls.schedule,
@@ -40,47 +50,45 @@ def create_dag(processor_cls: Type[T]):
     def processing_dag():
         @task
         def init_validate() -> bool:
-            """Проверка соединений и инициализация данных"""
-
+            """Проверка соединений и инициализация данных."""
             return DagBase.init_validate(
                 bucket=settings.MINIO_BUCKET,
                 s3_conn_id=settings.S3_CONN_ID,
                 pg_conn_id=settings.PG_CONN_ID,
-                processor_cls=processor_cls
+                processor_cls=processor_cls,
             )
 
         @task
         def get_file_list() -> list:
-            """Получение списка файлов из MinIO"""
-
+            """Получение списка файлов из MinIO."""
             return DagBase.get_file_list(
-                bucket=settings.MINIO_BUCKET,
-                s3_conn_id=settings.S3_CONN_ID
+                bucket=settings.MINIO_BUCKET, s3_conn_id=settings.S3_CONN_ID
             )
 
         # Запустим всё одной группе
         @task_group(group_id="process_pipeline")
         def process_file_pipeline(file_info: dict):
+            """Пайплайн для одного файла."""
+
             @task(on_failure_callback=handle_file_failure)
             def process_file(file_metadata: dict) -> dict:
-                """Обработка одного файла"""
-
+                """Обработка одного файла."""
                 return DagBase.process_file(
                     file_metadata=file_metadata,
                     bucket=settings.MINIO_BUCKET,
                     s3_conn_id=settings.S3_CONN_ID,
                     pg_conn_id=settings.PG_CONN_ID,
-                    processor_cls=processor_cls
+                    processor_cls=processor_cls,
                 )
 
             @task
             def move_files(processed_data: dict):
-                """Перемещение обработанных файлов"""
+                """Перемещение обработанных файлов."""
                 DagBase.move_file_to(
                     processed_data=processed_data,
                     success_path=settings.SUCCESS_PATH,
                     error_path=settings.ERROR_PATH,
-                    s3_conn_id=settings.S3_CONN_ID
+                    s3_conn_id=settings.S3_CONN_ID,
                 )
 
             processed = process_file(file_metadata=file_info)
@@ -102,5 +110,5 @@ def create_dag(processor_cls: Type[T]):
 
 # Создаем DAG
 for cls in ExcelProcessorBase.__subclasses__():
-    if hasattr(cls, 'dag_id'):
+    if hasattr(cls, "dag_id"):
         globals()[cls.dag_id] = create_dag(cls)

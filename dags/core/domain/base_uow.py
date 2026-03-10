@@ -7,13 +7,21 @@ Unit of Work — это шаблон проектирования, которы�
 from abc import abstractmethod
 from contextlib import AbstractContextManager
 
-from core.domain.repositories import IBaseRepository
+from core.domain.base_repositories import IBaseRepository
 
 
 class IUnitOfWork(AbstractContextManager):
     """Реализация Unit of Work определяет репозитории для различных доменных сущностей."""
 
-    repos: dict[str, IBaseRepository]
+    @abstractmethod
+    def transaction(self):
+        """Контекстный менеджер транзакции."""
+        pass
+
+    @abstractmethod
+    def get_repo(self, model: type) -> IBaseRepository:
+        """Получить репозиторий для указанной ORM модели."""
+        pass
 
     @abstractmethod
     def commit(self):

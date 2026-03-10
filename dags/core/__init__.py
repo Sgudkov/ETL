@@ -1,0 +1,2 @@
+def minio():
+    return None

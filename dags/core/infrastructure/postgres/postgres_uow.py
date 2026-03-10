@@ -5,14 +5,14 @@
 """
 
 from contextlib import contextmanager
-from typing import Type, TypeVar
+from typing import TypeVar
 
-from core.domain.repositories import IBaseRepository
-from core.domain.unit_of_work import IUnitOfWork
-from core.infrastructure.repositories.base_sql_repository import SqlAlchemyRepository
+from core.domain.base_repositories import IBaseRepository
+from core.domain.base_uow import IUnitOfWork
+from core.infrastructure.postgres.postgres_repository import SqlAlchemyRepository
 from sqlalchemy.orm import Session
 
-from core.infrastructure.repositories.repository_factory import RepositoryFactory
+from core.infrastructure.postgres.repository_factory import RepositoryFactory
 
 T = TypeVar("T", bound=SqlAlchemyRepository)
 
@@ -33,7 +33,7 @@ class SqlAlchemyUnitOfWork(IUnitOfWork):
         self.session = session
         self.repo_factory = repo_factory
 
-    def get_repo(self, model: type) -> SqlAlchemyRepository:
+    def get_repo(self, model: type) -> IBaseRepository:
         return self.repo_factory.create(model, self.session)
 
     def commit(self):

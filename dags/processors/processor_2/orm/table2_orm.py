@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import declarative_base
 
-from core.infrastructure.orm.base import Base
+Base = declarative_base()
 
 
 class ExcelTable2ORM(Base):

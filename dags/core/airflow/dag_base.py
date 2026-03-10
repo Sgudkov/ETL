@@ -11,12 +11,12 @@ import logging
 from typing import Type, TypeVar, cast
 
 from airflow.exceptions import AirflowException
-from core.excel_processor_base import ExcelProcessorBase
-from core.infrastructure.repositories.repository_factory import RepositoryFactory
-from core.infrastructure.unit_of_work.sql_uow import SqlAlchemyUnitOfWork
+from core.application.excel_processor_base import ExcelProcessorBase
+from core.infrastructure.postgres.repository_factory import RepositoryFactory
+from core.infrastructure.postgres.postgres_uow import SqlAlchemyUnitOfWork
 from sqlalchemy.orm import sessionmaker, DeclarativeMeta
-from utils.minio_client import MinIOClient
-from utils.postgres_client import PostgresClient
+from core.infrastructure.minio.minio_client import MinIOClient
+from core.infrastructure.postgres.postgres_client import PostgresClient
 
 logger = logging.getLogger(__name__)
 
@@ -197,8 +197,7 @@ class DagBase:
             file_data = minio.get_file(bucket, file_name)
 
             # Логика ETL
-            processed_data = processor.run((file_name, file_data))
-            processor.save(processed_data)
+            processor.run((file_name, file_data))
 
             file_metadata = {
                 "file_name": file_name,

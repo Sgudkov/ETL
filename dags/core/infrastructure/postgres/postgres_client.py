@@ -5,14 +5,11 @@
 """
 
 import logging
-from typing import Optional, Type
+from typing import Optional
 
 from sqlalchemy import create_engine, schema
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeMeta
-
-from core.domain.repositories import IBaseRepository
-from core.infrastructure.repositories.base_sql_repository import SqlAlchemyRepository
 
 try:
     from airflow.providers.postgres.hooks.postgres import PostgresHook

@@ -12,12 +12,11 @@ import logging
 from typing import Type, TypeVar
 
 from config.settings import settings
-from core.dag_base import DagBase
-from core.excel_processor_base import ExcelProcessorBase
-from core.infrastructure.repositories.base_sql_repository import \
+from core.airflow.dag_base import DagBase
+from core.application.excel_processor_base import ExcelProcessorBase
+from core.infrastructure.postgres.postgres_repository import \
     SqlAlchemyRepository
-from core.infrastructure.unit_of_work.sql_uow import SqlAlchemyUnitOfWork
-from processors import ExcelProcessor1
+from core.infrastructure.postgres.postgres_uow import SqlAlchemyUnitOfWork
 
 T = TypeVar("T", bound=ExcelProcessorBase)
 S = TypeVar("S", bound=SqlAlchemyUnitOfWork)
@@ -73,7 +72,7 @@ class LocalRun:
             endpoint_url=settings.AWS_S3_ENDPOINT_URL,
             use_airflow=False,
             pg_uri=settings.LOCAL_PG_URL,
-            bucket=ExcelProcessor1.bucket_name,
+            bucket=processor_cls.bucket_name,
             processor_cls=processor_cls,
         )
 
@@ -82,14 +81,14 @@ class LocalRun:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             endpoint_url=settings.AWS_S3_ENDPOINT_URL,
             use_airflow=False,
-            bucket=ExcelProcessor1.bucket_name,
+            bucket=processor_cls.bucket_name,
         )
 
         for file in file_list:
             try:
                 DagBase.process_file(
                     file,
-                    bucket=ExcelProcessor1.bucket_name,
+                    bucket=processor_cls.bucket_name,
                     processor_cls=processor_cls,
                     aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,

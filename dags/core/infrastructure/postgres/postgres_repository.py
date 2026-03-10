@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from core.domain.repositories import IBaseRepository
+from core.domain.base_repositories import IBaseRepository
 from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
