@@ -10,6 +10,8 @@ from typing import Optional
 from sqlalchemy import create_engine, schema
 from sqlalchemy.engine import Engine
 
+from core.infrastructure.repositories.base_sql_repository import SqlAlchemyRepository
+
 try:
     from airflow.providers.postgres.hooks.postgres import PostgresHook
 except ImportError:
@@ -28,10 +30,10 @@ class PostgresClient:
     """
 
     def __init__(
-        self,
-        conn_id: Optional[str] = None,
-        uri: Optional[str] = None,
-        use_airflow: bool = True,
+            self,
+            conn_id: Optional[str] = None,
+            uri: Optional[str] = None,
+            use_airflow: bool = True,
     ):
         """Инициализация клиента PostgreSQL.
 
@@ -60,7 +62,7 @@ class PostgresClient:
         return self._engine
 
     @staticmethod
-    def prepare_database(engine: Engine, orm_model: object, schema_name: str):
+    def prepare_database(engine: Engine, orm_models: list[SqlAlchemyRepository]):
         """Подготавливает базу данных.
 
         Создает схему, если она не существует, и создает таблицы,
@@ -68,13 +70,15 @@ class PostgresClient:
 
         Args:
             engine (Engine): Объект соединения с базой данных SQLAlchemy.
-            orm_model (object): ORM-модель, содержащая определение таблиц.
-            schema_name (str): Название схемы базы данных.
+            orm_models (objects): ORM-модели, содержащая определение таблиц.
         """
-        if schema_name and schema_name != "public":
-            with engine.begin() as conn:
-                if not conn.dialect.has_schema(conn, schema_name):
-                    conn.execute(schema.CreateSchema(schema_name))
 
         with engine.begin() as conn:
-            orm_model.__table__.create(bind=conn, checkfirst=True)
+
+            for models in orm_models:
+                table = models.orm_model.__table__
+                if table.schema and table.schema != "public":
+                    if not conn.dialect.has_schema(conn, table.schema):
+                        conn.execute(schema.CreateSchema(table.schema))
+
+                table.create(bind=conn, checkfirst=True)

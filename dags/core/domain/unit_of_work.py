@@ -13,7 +13,7 @@ from core.domain.repositories import IBaseRepository
 class IUnitOfWork(AbstractContextManager):
     """Реализация Unit of Work определяет репозитории для различных доменных сущностей."""
 
-    repo: IBaseRepository
+    repos: dict[str, IBaseRepository]
 
     @abstractmethod
     def commit(self):

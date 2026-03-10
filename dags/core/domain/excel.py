@@ -9,9 +9,8 @@ ORM модели, обработки данных, загрузки и сохр�
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Type, TypeVar
 
+from core.domain.repositories import IBaseRepository
 from core.domain.unit_of_work import IUnitOfWork
-from core.infrastructure.orm.base import Base
-from core.infrastructure.repositories.base_sql_repository import SqlAlchemyRepository
 
 # Тип репозитория, который ожидает этот процессор
 R = TypeVar("R")
@@ -28,10 +27,8 @@ class IExcelProcessorBase(ABC, Generic[R]):
     основного цикла обработки.
 
     Атрибуты:
-        repository_class (Type[SqlAlchemyRepository]): Класс репозитория,
-            который будет использоваться для работы с базой данных.
-        orm_model (Type[Base]): ORM модель, соответствующая обрабатываемым
-            данным.
+        repository_classes dict[str, Type[IBaseRepository]]: Классы репозиториев,
+            которые будут использоваться для работы с базой данных.
         dag_id (str): Идентификатор DAG (Directed Acyclic Graph) в оркестраторе
             рабочих процессов (например, Airflow).
         bucket_name (str): Название бакета (bucket) в облачном хранилище
@@ -47,11 +44,10 @@ class IExcelProcessorBase(ABC, Generic[R]):
                 uow (IUnitOfWork): Экземпляр Unit of Work.
     """
 
-    repository_class: Type[SqlAlchemyRepository]
-    orm_model: Type[Base]
+    repository_classes: dict[str, Type[IBaseRepository]]
     dag_id: str
     bucket_name: str
-    schedule: str = "@daily"
+    schedule: str
 
     def __init__(self, uow: IUnitOfWork):
         """Инициализирует процессор с объектом Unit of Work.
@@ -61,12 +57,6 @@ class IExcelProcessorBase(ABC, Generic[R]):
                 транзакциями базы данных.
         """
         self.uow = uow
-
-    @property
-    @abstractmethod
-    def schema(self) -> str:
-        """Абстрактное свойство для схемы."""
-        pass
 
     @abstractmethod
     def process(self, file_name: str, data: bytes) -> List[Dict[str, Any]]:
@@ -100,12 +90,12 @@ class IExcelProcessorBase(ABC, Generic[R]):
         pass
 
     @abstractmethod
-    def save(self, data: List[Dict[str, Any]] = None):
+    def save(self, data: dict[str, list[dict]] = None) -> int:
         """Сохраняет обработанные данные.
 
         Args:
-            data (List[Dict[str, Any]], optional): Список словарей,
-                представляющий собой обработанные данные. Если None,
+            data (dict[str, list[dict]], optional): Словарь,
+                представляющий собой обработанные данные по каждому репозиторию. Если None,
                 метод может выполнять какое-то действие по умолчанию.
         """
         pass

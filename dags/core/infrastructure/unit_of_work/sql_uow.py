@@ -21,14 +21,17 @@ class SqlAlchemyUnitOfWork(IUnitOfWork):
     доступа к репозиториям, основанным на SQLAlchemy.
     """
 
-    def __init__(self, session: Session, repo: Type[T]):
+    def __init__(self, session: Session, repos: dict[str, Type[T]]):
         """Инициализирует экземпляр SqlAlchemyUnitOfWork.
 
         Args:
             session: Экземпляр SQLAlchemy Session для управления транзакциями и репозиториями.
         """
         self.session = session
-        self.repo = repo(session)
+        self.repos = {
+            name: repo(session)
+            for name, repo in repos.items()
+        }
 
     def commit(self):
         """Фиксирует изменения в базе данных."""

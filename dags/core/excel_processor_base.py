@@ -23,6 +23,8 @@ class ExcelProcessorBase(IExcelProcessorBase):
     использования с SQLAlchemy Unit of Work паттерном и MinIO для хранения файлов.
     """
 
+    schedule: str = "@daily"
+
     def __init__(self, uow: SqlAlchemyUnitOfWork):
         """Инициализирует экземпляр ExcelProcessorBase.
 
@@ -31,17 +33,6 @@ class ExcelProcessorBase(IExcelProcessorBase):
         """
         super().__init__(uow)
         self.uow = uow
-
-    @property
-    def schema(self) -> str:
-        """Возвращает схему базы данных, где находится ORM модель.
-
-        По умолчанию используется схема 'public', если она не указана в модели.
-
-        Returns:
-            str: Название схемы базы данных.
-        """
-        return self.orm_model.__table__.schema or "public"
 
     def process(self, file_name: str, data: bytes) -> List[Dict[str, Any]]:
         """Обрабатывает данные из Excel файла.
@@ -61,11 +52,11 @@ class ExcelProcessorBase(IExcelProcessorBase):
         """
         raise NotImplementedError
 
-    def save(self, data: List[Dict[str, Any]] = None) -> int:
+    def save(self, data: dict[str, list[dict]] = None) -> int:
         """Сохраняет обработанные данные в базу данных.
 
         Args:
-            data: Список словарей, представляющих обработанные данные для сохранения.
+            data: Словари, представляющих обработанные данные для сохранения.
                   Если None, функция вернет 0.
 
         Returns:
@@ -75,7 +66,12 @@ class ExcelProcessorBase(IExcelProcessorBase):
             return 0
 
         with self.uow.transaction():
-            return self.uow.repo.bulk_insert(data)
+            count = 0
+            for repo_name, rows in data.items():
+                repo = self.uow.repos[repo_name]
+                count += repo.bulk_insert(rows)
+
+        return count
 
     def run(self, file: tuple[str, bytes]) -> List[Dict[str, Any]]:
         """Запускает процесс обработки Excel файла.

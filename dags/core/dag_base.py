@@ -83,9 +83,8 @@ class DagBase:
 
             engine = pg_client.engine
             # Создание таблицы, если отсутствует
-            target_schema = processor_cls.orm_model.__table__.schema
             PostgresClient.prepare_database(
-                engine, processor_cls.orm_model, target_schema
+                engine, processor_cls.repository_classes.values()
             )
         except Exception as e:
             logger.error(f"Ошибка при проверке соединений и инициализации данных {e}")
@@ -176,7 +175,7 @@ class DagBase:
         file_name = file_metadata.get("file_name")
 
         with session_factory() as session:
-            uow = SqlAlchemyUnitOfWork(session, processor_cls.repository_class)
+            uow = SqlAlchemyUnitOfWork(session, processor_cls.repository_classes)
             processor = processor_cls(uow)  # Использование переданного класса
 
             # Скачиваем файл
